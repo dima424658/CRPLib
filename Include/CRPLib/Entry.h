@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Common.h"
-#include "Interfaces.h"
+#include "CRPLib/Common.h"
+#include "CRPLib/Interfaces.h"
 
 #include <vector>
 #include <fstream>

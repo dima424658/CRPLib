@@ -1,4 +1,4 @@
-#include "Effect.h"
+#include "CRPLib/Effect.h"
 
 namespace CrpLib {
 

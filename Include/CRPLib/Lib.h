@@ -1,0 +1,15 @@
+#pragma once
+
+#include "CRPLib/Interfaces.h"
+#include "CRPLib/CrpFile.h"
+#include "CRPLib/Entry.h"
+#include "CRPLib/Part.h"
+#include "CRPLib/RawData.h"
+#include "CRPLib/Matrix.h"
+#include "CRPLib/Effect.h"
+#include "CRPLib/Vector2.h"
+#include "CRPLib/Vector4.h"
+#include "CRPLib/Base.h"
+#include "CRPLib/BPlanes.h"
+#include "CRPLib/Common.h"
+#include "CRPLib/Material.h"

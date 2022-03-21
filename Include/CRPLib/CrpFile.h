@@ -4,7 +4,7 @@
 #include <string>
 #include <fstream>
 #include <string.h>
-#include "Entry.h"
+#include "CRPLib/Entry.h"
 
 using namespace std;
 

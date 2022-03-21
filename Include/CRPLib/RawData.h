@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Interfaces.h"
-#include "Entry.h"
+#include "CRPLib/Interfaces.h"
+#include "CRPLib/Entry.h"
 
 #include <string>
 #include <fstream>

@@ -1,6 +1,8 @@
 # CRPLib
 Library for import/export Need for Speed 5 CRP models
 
+[Here](CRPFormat.md) is file format structure
+
 ## Development and contributing
 Feel free to send pull requests and raise issues.
 
