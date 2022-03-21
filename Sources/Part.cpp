@@ -1,218 +1,213 @@
+#include <algorithm>
+#include <limits>
+
 #include "CRPLib/Part.h"
 
-namespace CrpLib {
+#include "CRPLib/Entry.h"
 
-    void CPart::FreeData() {
-        if (m_Init) {
-            delete[] m_pInfo;
-            delete[] m_pIndex;
-            delete[] m_pIndices;
-        }
+namespace CrpLib
+{
+    void CPart::Read(std::istream &is, ICrpEntry *entry)
+    {
+        int infoCount, indexCount;
+
+        is.read(reinterpret_cast<char *>(&m_FillMode), sizeof(m_FillMode));
+        is.read(reinterpret_cast<char *>(&m_TransInfo), sizeof(m_TransInfo));
+
+        is.read(reinterpret_cast<char *>(&m_Mat), sizeof(m_Mat));
+        is.read(reinterpret_cast<char *>(&m_Unk1), sizeof(m_Unk1));
+
+        is.read(reinterpret_cast<char *>(&m_BSphere), sizeof(m_BSphere));
+        is.read(reinterpret_cast<char *>(&m_Unk2), sizeof(m_Unk2));
+
+        is.read(reinterpret_cast<char *>(&infoCount), sizeof(infoCount));
+        is.read(reinterpret_cast<char *>(&indexCount), sizeof(indexCount));
+
+        m_pInfo.resize(infoCount);
+        m_pIndex.resize(indexCount);
+        m_pIndices.resize(indexCount * dynamic_cast<CEntry *>(entry)->GetCount());
+
+        is.read(reinterpret_cast<char *>(m_pInfo.data()), sizeof(decltype(m_pInfo)::value_type) * m_pInfo.size());
+        is.read(reinterpret_cast<char *>(m_pIndex.data()), sizeof(decltype(m_pIndex)::value_type) * m_pIndex.size());
+        is.read(reinterpret_cast<char *>(m_pIndices.data()), sizeof(decltype(m_pIndices)::value_type) * m_pIndices.size());
     }
 
-    CPart::CPart(void) {
-        m_Unk1 = (short) 0x8000;
-        m_pIndex = NULL;
-        m_pIndices = NULL;
-        m_pInfo = NULL;
-        m_Init = false;
+    void CPart::Write(std::ostream &os)
+    {
+        int infoCount = m_pInfo.size(), indexCount = m_pIndex.size();
+
+        os.write(reinterpret_cast<char *>(&m_FillMode), sizeof(m_FillMode));
+        os.write(reinterpret_cast<char *>(&m_TransInfo), sizeof(m_TransInfo));
+
+        os.write(reinterpret_cast<char *>(&m_Mat), sizeof(m_Mat));
+        os.write(reinterpret_cast<char *>(&m_Unk1), sizeof(m_Unk1));
+
+        os.write(reinterpret_cast<char *>(&m_BSphere), sizeof(m_BSphere));
+        os.write(reinterpret_cast<char *>(&m_Unk2), sizeof(m_Unk2));
+
+        os.write(reinterpret_cast<char *>(&infoCount), sizeof(infoCount));
+        os.write(reinterpret_cast<char *>(&indexCount), sizeof(indexCount));
+
+        os.write(reinterpret_cast<char *>(m_pInfo.data()), sizeof(decltype(m_pInfo)::value_type) * m_pInfo.size());
+        os.write(reinterpret_cast<char *>(m_pIndex.data()), sizeof(decltype(m_pIndex)::value_type) * m_pIndex.size());
+        os.write(reinterpret_cast<char *>(m_pIndices.data()), sizeof(decltype(m_pIndices)::value_type) * m_pIndices.size());
     }
 
-    CPart::~CPart(void) {
-        FreeData();
+    int CPart::GetEntryLength()
+    {
+        return sizeof(m_FillMode) + sizeof(m_TransInfo) + sizeof(m_Mat) + sizeof(m_Unk1) + sizeof(m_BSphere) + sizeof(m_Unk2) + sizeof(int) /* infoCount */ +
+               sizeof(int) /* indexCount */ + sizeof(decltype(m_pInfo)::value_type) * m_pInfo.size() + sizeof(decltype(m_pIndex)::value_type) * m_pIndex.size() +
+               sizeof(decltype(m_pIndices)::value_type) * m_pIndices.size();
     }
 
-    void CPart::Read(std::fstream *file, ICrpEntry *entry) {
-
-        CEntry *en = (CEntry *) entry;
-
-        FreeData();
-        m_Init = true;
-
-        file->read((char *) &m_FillMode, 2);
-        file->read((char *) &m_TransInfo, 2);
-
-        file->read((char *) &m_Mat, 2);
-        file->read((char *) &m_Unk1, 2);
-
-        file->read((char *) &m_BSphere, sizeof(tVector4));
-        file->read((char *) &m_Unk2, sizeof(tVector4));
-
-        file->read((char *) &m_InfoCount, 4);
-        file->read((char *) &m_IndexCount, 4);
-
-        m_pInfo = new tPartInfo[m_InfoCount];
-        m_pIndex = new tPartIndex[m_IndexCount];
-
-        file->read((char *) m_pInfo, sizeof(tPartInfo) * m_InfoCount);
-        file->read((char *) m_pIndex, sizeof(tPartIndex) * m_IndexCount);
-
-        m_IndiceCount = m_IndexCount * en->GetCount();
-        m_pIndices = new unsigned char[m_IndiceCount];
-        file->read((char *) m_pIndices, m_IndiceCount);
-
-    }
-
-    void CPart::Write(std::fstream *file) {
-
-        file->write((char *) &m_FillMode, 2);
-        file->write((char *) &m_TransInfo, 2);
-
-        file->write((char *) &m_Mat, 2);
-        file->write((char *) &m_Unk1, 2);
-
-        file->write((char *) &m_BSphere, sizeof(tVector4));
-        file->write((char *) &m_Unk2, sizeof(tVector4));
-
-        file->write((char *) &m_InfoCount, 4);
-        file->write((char *) &m_IndexCount, 4);
-
-        file->write((char *) m_pInfo, sizeof(tPartInfo) * m_InfoCount);
-        file->write((char *) m_pIndex, sizeof(tPartIndex) * m_IndexCount);
-
-        file->write((char *) m_pIndices, m_IndiceCount);
-
-    }
-
-    int CPart::GetEntryLength() {
-        return 0x30 + 0x10 * m_InfoCount + 0x8 * m_IndexCount + m_IndiceCount;
-    }
-
-    int CPart::GetEntryCount() {
-        return m_IndiceCount / m_IndexCount;
+    int CPart::GetEntryCount()
+    {
+        return m_pIndices.size() / m_pIndex.size();
     }
 
     // inits an empty CPart with required Info and Index entries
-    void CPart::InitStorage(ICrpEntry *entry, int indiceCount, RM_NAME rm) {
+    void CPart::InitStorage(ICrpEntry *entry, int indiceCount, eRMName rm)
+    {
+        dynamic_cast<CEntry*>(entry)->SetCount(indiceCount);
 
-        FreeData();
-        m_Init = true;
+        m_pIndex.resize(2);
 
-        CEntry *en = (CEntry *) entry;
-        en->SetCount(indiceCount);
-
-        m_InfoCount = 4;
-        m_IndexCount = 2;
-
-        m_pInfo = new tPartInfo[m_InfoCount];
-        m_pIndex = new tPartIndex[m_IndexCount];
-
-        m_pIndex[0].Id = (short) ID_INDEX_VERTEX;
+        m_pIndex[0].Id    = eIndexRowID::Vertex;
         m_pIndex[0].Index = 1;
 
-        m_pIndex[1].Id = (short) ID_INDEX_UV;
+        m_pIndex[1].Id    = eIndexRowID::UV;
         m_pIndex[1].Index = 1;
 
-        m_pInfo[0].Id = (short) ID_INFO_CULL;
+        m_pInfo.resize(4);
+
+        m_pInfo[0].Id          = eInfoRowID::Cull;
         m_pInfo[0].IndexRowRef = -1;
 
-        m_pInfo[1].Id = (short) ID_INFO_NORMAL;
+        m_pInfo[1].Id          = eInfoRowID::Normal;
         m_pInfo[1].IndexRowRef = 0;
 
-        m_pInfo[2].Id = (short) ID_INFO_UV;
+        m_pInfo[2].Id          = eInfoRowID::UV;
         m_pInfo[2].IndexRowRef = 1;
 
-        m_pInfo[3].Id = (short) ID_INFO_VERTEX;
+        m_pInfo[3].Id          = eInfoRowID::Vertex;
         m_pInfo[3].IndexRowRef = 0;
 
-        switch (rm) {
-            case RM_EXT:
-                m_pInfo[0].RMOffs = 0x2;
-                m_pInfo[1].RMOffs = 0x8;
-                m_pInfo[2].RMOffs = 0x9;
-                m_pInfo[3].RMOffs = 0xA;
-                break;
-            case RM_EXT_ENV:
-                m_pInfo[0].RMOffs = 0x4;
-                m_pInfo[1].RMOffs = 0x13;
-                m_pInfo[2].RMOffs = 0x14;
-                m_pInfo[3].RMOffs = 0x15;
-                break;
-            case RM_INT:
-                m_pInfo[0].RMOffs = 0x1;
-                m_pInfo[1].RMOffs = 0x7;
-                m_pInfo[2].RMOffs = 0x8;
-                m_pInfo[3].RMOffs = 0x9;
-                break;
-            case RM_WHEEL:
-                m_pInfo[0].RMOffs = 0x1;
-                m_pInfo[1].RMOffs = 0x7;
-                m_pInfo[2].RMOffs = 0x8;
-                m_pInfo[3].RMOffs = 0x9;
-                break;
-            case RM_WINDOW:
-                m_pInfo[0].RMOffs = 0x4;
-                m_pInfo[1].RMOffs = 0xE;
-                m_pInfo[2].RMOffs = 0xF;
-                m_pInfo[3].RMOffs = 0x10;
-                break;
+        switch (rm)
+        {
+        case eRMName::Ext:
+            m_pInfo[0].RMOffs = 0x2;
+            m_pInfo[1].RMOffs = 0x8;
+            m_pInfo[2].RMOffs = 0x9;
+            m_pInfo[3].RMOffs = 0xA;
+            break;
+        case eRMName::ExtEnv:
+            m_pInfo[0].RMOffs = 0x4;
+            m_pInfo[1].RMOffs = 0x13;
+            m_pInfo[2].RMOffs = 0x14;
+            m_pInfo[3].RMOffs = 0x15;
+            break;
+        case eRMName::Int:
+            m_pInfo[0].RMOffs = 0x1;
+            m_pInfo[1].RMOffs = 0x7;
+            m_pInfo[2].RMOffs = 0x8;
+            m_pInfo[3].RMOffs = 0x9;
+            break;
+        case eRMName::Wheel:
+            m_pInfo[0].RMOffs = 0x1;
+            m_pInfo[1].RMOffs = 0x7;
+            m_pInfo[2].RMOffs = 0x8;
+            m_pInfo[3].RMOffs = 0x9;
+            break;
+        case eRMName::Window:
+            m_pInfo[0].RMOffs = 0x4;
+            m_pInfo[1].RMOffs = 0xE;
+            m_pInfo[2].RMOffs = 0xF;
+            m_pInfo[3].RMOffs = 0x10;
+            break;
         }
 
-        m_IndiceCount = indiceCount * m_IndexCount;
-        m_pIndices = new unsigned char[m_IndiceCount];
-        memset(m_pIndices,0,  m_IndiceCount);
-
+        m_pIndices.clear();
+        m_pIndices.insert(m_pIndices.end(), indiceCount * m_pIndex.size(), 0);
     }
 
-    short CPart::GetFillMode() {
+    short CPart::GetFillMode()
+    {
         return m_FillMode;
     }
 
-    void CPart::SetFillMode(short value) {
+    void CPart::SetFillMode(short value)
+    {
         m_FillMode = value;
     }
 
-    PART_TRANS CPart::GetTransInfo() {
-        return (PART_TRANS) m_TransInfo;
+    ePartTrans CPart::GetTransInfo()
+    {
+        return m_TransInfo;
     }
 
-    void CPart::SetTransInfo(PART_TRANS value) {
-        m_TransInfo = (short) value;
+    void CPart::SetTransInfo(ePartTrans value)
+    {
+        m_TransInfo = value;
     }
 
-    short CPart::GetMaterial() {
+    short CPart::GetMaterial()
+    {
         return m_Mat;
     }
 
-    void CPart::SetMaterial(short value) {
+    void CPart::SetMaterial(short value)
+    {
         m_Mat = value;
     }
 
-    tVector4 *CPart::GetBoundingSphere() {
-        return &m_BSphere;
+    tVector4 &CPart::GetBoundingSphere()
+    {
+        return m_BSphere;
     }
 
-    int CPart::GetInfoCount() {
-        return m_InfoCount;
+    size_t CPart::GetInfoCount()
+    {
+        return m_pInfo.size();
     }
 
-    int CPart::GetIndexCount() {
-        return m_IndexCount;
+    size_t CPart::GetIndexCount()
+    {
+        return m_pIndex.size();
     }
 
-    tPartInfo *CPart::GetInfo(int index) {
-        return &m_pInfo[index];
+    tPartInfo &CPart::GetInfo(size_t index)
+    {
+        return m_pInfo[index];
     }
 
-    tPartIndex *CPart::GetIndex(int index) {
-        return &m_pIndex[index];
+    tPartIndex &CPart::GetIndex(size_t index)
+    {
+        return m_pIndex[index];
     }
 
-    unsigned char *CPart::GetIndices(int index) {
-        return &m_pIndices[m_pIndex[index].Offset];
+    char &CPart::GetIndices(size_t index)
+    {
+        return m_pIndices[m_pIndex[index].Offset];
     }
 
-    int CPart::FindInfo(INFOROW_ID ird) {
-        for (int i = 0; i < m_InfoCount; i++)
-            if (m_pInfo[i].Id == (short) ird) return i;
-        return -1;
+    size_t CPart::FindInfo(eInfoRowID ird)
+    {
+        auto result = std::find_if(m_pInfo.begin(), m_pInfo.end(), [ird](const auto &it) { return it.Id == ird; });
+
+        if (result == m_pInfo.end())
+            return std::numeric_limits<size_t>().max();
+        else
+            return std::distance(m_pInfo.begin(), result);
     }
 
-    int CPart::FindIndex(INDEXROW_ID ird) {
-        for (int i = 0; i < m_IndexCount; i++)
-            if (m_pIndex[i].Id == (short) ird) return i;
-        return -1;
+    size_t CPart::FindIndex(eIndexRowID ird)
+    {
+        auto result = std::find_if(m_pIndex.begin(), m_pIndex.end(), [ird](const auto &it) { return it.Id == ird; });
+
+        if (result == m_pIndex.end())
+            return std::numeric_limits<size_t>().max();
+        else
+            return std::distance(m_pIndex.begin(), result);
     }
 
-
-} // namespace
+} // namespace CrpLib

@@ -1,32 +1,30 @@
 #pragma once
 
-#include <fstream>
-#include <cstring>
+#include <istream>
+#include <ostream>
 
-namespace CrpLib {
-
-    class ICrpEntry {
+namespace CrpLib
+{
+    class ICrpEntry
+    {
     public:
-        virtual void Read(std::fstream *file) {};
+        virtual ~ICrpEntry() = 0;
 
-        virtual void WriteEntry(std::fstream *file) {};
+        virtual void Read(std::istream &is) = 0;
 
-        virtual void WriteData(std::fstream *file) {};
-
-        virtual ~ICrpEntry() {};
+        virtual void WriteEntry(std::ostream &os) = 0;
+        virtual void WriteData(std::ostream &os) = 0;
     };
 
-    class ICrpData {
+    class ICrpData
+    {
     public:
-        virtual void Read(std::fstream *file, ICrpEntry *entry) {};
+        virtual ~ICrpData() = 0;
 
-        virtual void Write(std::fstream *file) {};
+        virtual void Read(std::istream &is, ICrpEntry *entry) = 0;
+        virtual void Write(std::ostream &os) = 0;
 
         virtual int GetEntryLength() = 0;
-
-        virtual int GetEntryCount() = 0;
-
-        virtual ~ICrpData() {};
+        virtual int GetEntryCount()  = 0;
     };
-
-}
+} // namespace CrpLib

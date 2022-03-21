@@ -1,53 +1,51 @@
 #include "CRPLib/Matrix.h"
 
-namespace CrpLib {
-
-    CMatrix::CMatrix(void) {
-        for (int i = 0; i < 16; i++)
-            m_Items[i] = (i % 5 == 0) ? 1.0f : 0.0f;
+namespace CrpLib
+{
+    CMatrix::CMatrix(float *values)
+    {
+        SetValues(values);
     }
 
-    CMatrix::CMatrix(float *values) {
-        memcpy(m_Items, values, 16 * 4);
+    void CMatrix::Read(std::istream &is, ICrpEntry *entry)
+    {
+        is.read(reinterpret_cast<char *>(m_Items.data()), sizeof(decltype(m_Items)::value_type) * m_Items.size());
     }
 
-    CMatrix::~CMatrix(void) {
-
+    void CMatrix::Write(std::ostream &os)
+    {
+        os.write(reinterpret_cast<char *>(m_Items.data()), sizeof(decltype(m_Items)::value_type) * m_Items.size());
     }
 
-
-    void CMatrix::Read(std::fstream *file, ICrpEntry *entry) {
-        file->read((char *) m_Items, 16 * 4);
+    int CMatrix::GetEntryLength()
+    {
+        return sizeof(decltype(m_Items)::value_type) * m_Items.size();
     }
 
-    void CMatrix::Write(std::fstream *file) {
-        file->write((char *) m_Items, 16 * 4);
-    }
-
-    int CMatrix::GetEntryLength() {
-        return 0x40;
-    }
-
-    int CMatrix::GetEntryCount() {
+    int CMatrix::GetEntryCount()
+    {
         return 0x1;
     }
 
     // accessors and modifiers
 
-    float CMatrix::GetItem(int row, int col) {
+    float CMatrix::GetItem(size_t row, size_t col)
+    {
         return m_Items[row * 4 + col];
     }
 
-    void CMatrix::SetItem(int row, int col, float value) {
+    void CMatrix::SetItem(size_t row, size_t col, float value)
+    {
         m_Items[row * 4 + col] = value;
     }
 
-    float *CMatrix::GetValues(){
-        return m_Items;
+    float *CMatrix::GetValues()
+    {
+        return m_Items.data();
     }
 
-    void CMatrix::SetValues(float *values) {
-        std::memcpy(m_Items, values, 4 * 16);
+    void CMatrix::SetValues(float *values)
+    {
+        std::copy(values, values + 16, m_Items.begin());
     }
-
-} // namespace
+} // namespace CrpLib

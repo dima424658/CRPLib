@@ -1,40 +1,40 @@
 #pragma once
 
-#include "CRPLib/Interfaces.h"
-#include "CRPLib/Entry.h"
-
+#include <vector>
 #include <string>
-#include <fstream>
 
-namespace CrpLib {
+#include "CRPLib/Interfaces.h"
 
-    class CRawData : public ICrpData {
+namespace CrpLib
+{
+    class CRawData : public ICrpData
+    {
     private:
-        static const uint32_t RAWDATA_MAGIC = 0x57415243;
-        char *m_pData;
-        std::streamoff m_Length;
-        bool m_Init;
-        // clean up helper
-        void FreeData();
+        static constexpr uint32_t cRawDataMagic = 0x57415243;
+
+        std::vector<char> m_pData;
 
     public:
-        CRawData(void);
+        CRawData() = default;
         CRawData(char *pData, int length);
-        ~CRawData(void);
-        void Read(std::fstream *file, ICrpEntry *entry);
-        void Write(std::fstream *file);
-        int GetEntryLength();
-        int GetEntryCount();
-        bool ReadFromFile(std::string filename);
-        bool WriteToFile(std::string filename);
+
+        void Read(std::istream &is, ICrpEntry *entry) override;
+        void Write(std::ostream &os) override;
+
+        int GetEntryLength() override;
+        int GetEntryCount() override;
+
+        void ReadFromStream(std::istream &is);
+        void WriteToStream(std::ostream &os);
+
         void ParseFrom(ICrpEntry *entry);
         void ParseTo(ICrpEntry *entry);
 
-        // accessors and modifiers
-        void SetData(char *pData, int length);
-        void SetData(std::string data);
-        char *GetData();
-        int GetLength();
-    };
+        // Accessors and modifiers
+        void SetData(const char *pData, size_t length);
+        void SetData(const std::string &data);
 
-}
+        char *GetData();
+        size_t GetLength();
+    };
+} // namespace CrpLib

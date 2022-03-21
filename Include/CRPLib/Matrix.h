@@ -1,43 +1,38 @@
 #pragma once
 
+#include <array>
+
 #include "CRPLib/Interfaces.h"
 
-#include <cstring>
-#include <fstream>
-
-namespace CrpLib {
-
-    class CMatrix :
-            public ICrpData {
+namespace CrpLib
+{
+    class CMatrix : public ICrpData
+    {
     private:
-        float m_Items[16];
+        std::array<float, 16> m_Items
+        {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f    
+        };
 
     public:
-
-        CMatrix(void);
-
+        CMatrix() = default;
         CMatrix(float *values);
 
-        ~CMatrix(void);
+        void Read(std::istream &is, ICrpEntry *entry) override;
+        void Write(std::ostream &os) override;
 
-        void Read(std::fstream *file, ICrpEntry *entry);
-
-        void Write(std::fstream *file);
-
-        int GetEntryLength();
-
-        int GetEntryCount();
+        int GetEntryLength() override;
+        int GetEntryCount() override;
 
         // accessors and modifiers
 
-        float GetItem(int row, int col);
-
-        void SetItem(int row, int col, float value);
+        float GetItem(size_t row, size_t col);
+        void SetItem(size_t row, size_t col, float value);
 
         float *GetValues();
-
         void SetValues(float *values);
-
     };
-
-}
+} // namespace CrpLib

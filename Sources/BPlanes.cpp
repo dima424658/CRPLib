@@ -1,71 +1,50 @@
 #include "CRPLib/BPlanes.h"
 
+#include "CRPLib/Entry.h"
 
-namespace CrpLib {
+namespace CrpLib
+{
+    void CBPlanes::Read(std::istream &is, ICrpEntry *entry)
+    {
+        is.read((char *) &m_Unk1, sizeof(m_Unk1));
+        is.read((char *) &m_Unk2, sizeof(m_Unk2));
 
-    void CBPlanes::FreeData() {
-        if (m_Init) {
-            delete[] m_pVertices;
-        }
+        m_pVertices.resize(dynamic_cast<CEntry *>(entry)->GetCount());
+
+        is.read((char *) m_pVertices.data(), sizeof(decltype(m_pVertices)::value_type) * m_pVertices.size());
     }
 
-    CBPlanes::CBPlanes(void) {
-        m_Init = false;
-        m_Count = 0;
-        m_Unk1 = m_Unk2 = 0;
+    void CBPlanes::Write(std::ostream &os)
+    {
+        os.write((char *) &m_Unk1, sizeof(m_Unk1));
+        os.write((char *) &m_Unk2, sizeof(m_Unk2));
+
+        os.write((char *) m_pVertices.data(), sizeof(decltype(m_pVertices)::value_type) * m_pVertices.size());
     }
 
-    CBPlanes::~CBPlanes(void) {
-        FreeData();
+    int CBPlanes::GetEntryLength()
+    {
+        return sizeof(m_Unk1) + sizeof(m_Unk2) + sizeof(decltype(m_pVertices)::value_type) * m_pVertices.size();
     }
 
-    void CBPlanes::Read(std::fstream *file, ICrpEntry *entry) {
-
-        CEntry *en = (CEntry *) entry;
-        m_Count = en->GetCount() / 4;
-
-        FreeData();
-        m_Init = true;
-
-        file->read((char *) &m_Unk1, 4);
-        file->read((char *) &m_Unk2, 4);
-
-        m_pVertices = new tVector4[m_Count * 4];
-        file->read((char *) m_pVertices, m_Count * 4 * sizeof(tVector4));
-
+    int CBPlanes::GetEntryCount()
+    {
+        return m_pVertices.size();
     }
 
-    void CBPlanes::Write(std::fstream *file) {
-
-        file->write((char *) &m_Unk1, 4);
-        file->write((char *) &m_Unk2, 4);
-
-        file->write((char *) m_pVertices, m_Count * 4 * sizeof(tVector4));
-
+    size_t CBPlanes::GetCount()
+    {
+        return m_pVertices.size() / 4;
     }
 
-    int CBPlanes::GetEntryLength() {
-        return (0x8 + 0x10 * m_Count * 4);
+    void CBPlanes::SetCount(size_t value)
+    {
+        m_pVertices.resize(value * 4);
     }
 
-    int CBPlanes::GetEntryCount() {
-        return (m_Count * 4);
+    tVector4 *CBPlanes::GetVertices()
+    {
+        return m_pVertices.data();
     }
 
-
-    int CBPlanes::GetCount() {
-        return m_Count;
-    }
-
-    void CBPlanes::SetCount(int value) {
-        if (m_Init) delete[] m_pVertices;
-        m_Init = true;
-        m_pVertices = new tVector4[value * 4];
-        m_Count = value;
-    }
-
-    tVector4 *CBPlanes::GetVertices() {
-        return m_pVertices;
-    }
-
-}
+} // namespace CrpLib

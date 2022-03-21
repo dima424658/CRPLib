@@ -2,12 +2,10 @@
 
 #include "CRPLib/Interfaces.h"
 
-#include <fstream>
-
-namespace CrpLib {
-
-    class CMaterial :
-            public ICrpData {
+namespace CrpLib
+{
+    class CMaterial : public ICrpData
+    {
     private:
         char m_pData1[0x10];
         char m_pRMthName[0x10];
@@ -16,17 +14,11 @@ namespace CrpLib {
         char m_pData3[0x10C];
 
     public:
-        CMaterial(void);
+        void Read(std::istream &is, ICrpEntry *entry) override;
+        void Write(std::ostream &os) override;
 
-        ~CMaterial(void);
-
-        void Read(std::fstream *file, ICrpEntry *entry);
-
-        void Write(std::fstream *file);
-
-        int GetEntryLength();
-
-        int GetEntryCount();
+        int GetEntryLength() override;
+        int GetEntryCount() override;
 
         int GetTpgIndex();
 
@@ -34,8 +26,7 @@ namespace CrpLib {
 
         void SetCull(bool cull);
 
-        char *GetRenderMethodName();
-
+        const char *GetRenderMethodName();
     };
 
-}
+} // namespace CrpLib

@@ -1,60 +1,62 @@
 #include "CRPLib/Material.h"
 
-namespace CrpLib {
-
-    CMaterial::CMaterial(void) {
-
+namespace CrpLib
+{
+    void CMaterial::Read(std::istream &is, ICrpEntry *entry)
+    {
+        is.read(reinterpret_cast<char *>(m_pData1), sizeof(m_pData1));
+        is.read(reinterpret_cast<char *>(m_pRMthName), sizeof(m_pRMthName));
+        is.read(reinterpret_cast<char *>(m_pData2), sizeof(m_pData2));
+        is.read(reinterpret_cast<char *>(&m_TpgIndex), sizeof(m_TpgIndex));
+        is.read(reinterpret_cast<char *>(m_pData3), sizeof(m_pData3));
     }
 
-    CMaterial::~CMaterial(void) {
-
+    void CMaterial::Write(std::ostream &os)
+    {
+        os.write(reinterpret_cast<char *>(m_pData1), sizeof(m_pData1));
+        os.write(reinterpret_cast<char *>(m_pRMthName), sizeof(m_pRMthName));
+        os.write(reinterpret_cast<char *>(m_pData2), sizeof(m_pData2));
+        os.write(reinterpret_cast<char *>(&m_TpgIndex), sizeof(m_TpgIndex));
+        os.write(reinterpret_cast<char *>(m_pData3), sizeof(m_pData3));
     }
 
-    void CMaterial::Read(std::fstream *file, ICrpEntry *entry) {
-        file->read((char *) m_pData1, 0x10);
-        file->read((char *) m_pRMthName, 0x10);
-        file->read((char *) m_pData2, 0x8);
-        file->read((char *) &m_TpgIndex, 4);
-        file->read((char *) m_pData3, 0x10C);
+    int CMaterial::GetEntryLength()
+    {
+        return sizeof(m_pData1) + sizeof(m_pRMthName) + sizeof(m_pData2) + sizeof(m_TpgIndex) + sizeof(m_pData3);
     }
 
-
-    void CMaterial::Write(std::fstream *file) {
-        file->write((char *) m_pData1, 0x10);
-        file->write((char *) m_pRMthName, 0x10);
-        file->write((char *) m_pData2, 0x8);
-        file->write((char *) &m_TpgIndex, 4);
-        file->write((char *) m_pData3, 0x10C);
-    }
-
-    int CMaterial::GetEntryLength() {
-        return 0x138;
-    }
-
-    int CMaterial::GetEntryCount() {
+    int CMaterial::GetEntryCount()
+    {
         return 0x34;
     }
 
-    int CMaterial::GetTpgIndex() {
+    int CMaterial::GetTpgIndex()
+    {
         return m_TpgIndex;
     }
 
-    void CMaterial::SetTpgIndex(int index) {
+    void CMaterial::SetTpgIndex(int index)
+    {
         m_TpgIndex = index;
     }
 
-    void CMaterial::SetCull(bool cull) {
-        if (cull) {
-            m_pData1[0xC] = 0x20;
+    void CMaterial::SetCull(bool cull)
+    {
+        if (cull)
+        {
+            m_pData1[0xC]  = 0x20;
             m_pData3[0xE4] = 0x1;
-        } else {
-            m_pData1[0xC] = 0x0;
+        }
+        else
+        {
+            m_pData1[0xC]  = 0x0;
             m_pData3[0xE4] = 0x0;
         }
     }
 
-    char *CMaterial::GetRenderMethodName() {
+    const char *CMaterial::GetRenderMethodName()
+    {
         return m_pRMthName;
     }
 
-}
+} // namespace CrpLib

@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.7)
 
 project(CRPLib)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(CRP_SOURCES 
     ${CMAKE_SOURCE_DIR}/Sources/Base.cpp
     ${CMAKE_SOURCE_DIR}/Sources/BPlanes.cpp

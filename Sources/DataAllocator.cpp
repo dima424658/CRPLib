@@ -1,43 +1,43 @@
-#include "CRPLib/Lib.h"
+#include "CRPLib/Common.h"
 
-namespace CrpLib {
-    ICrpData* AllocateDataEntry(ENTRY_ID id) {
-        ICrpData* data;
-        switch (id) {
-            case ID_NAME:
-                data = new CRawData();
-                break;
-            case ID_VERTEX:
-            case ID_NORMAL:
-            case ID_CULL:
-                data = new CVector4();
-                break;
-            case ID_UV:
-                data = new CVector2();
-                break;
-            case ID_EFFECT:
-                data = new CEffect();
-                break;
-            case ID_TRANSFORM:
-                data = new CMatrix();
-                break;
-            case ID_PART:
-                data = new CPart();
-                break;
-            case ID_BASE:
-                data = new CBase();
-                break;
-            case ID_BPLANES:
-                data = new CBPlanes();
-                break;
-            case ID_MATERIAL:
-                data = new CMaterial();
-                break;
-            default:
-                data = new CRawData();
-                break;
+#include "CRPLib/RawData.h"
+#include "CRPLib/Vector2.h"
+#include "CRPLib/Vector4.h"
+#include "CRPLib/Effect.h"
+#include "CRPLib/Matrix.h"
+#include "CRPLib/Part.h"
+#include "CRPLib/Base.h"
+#include "CRPLib/BPlanes.h"
+#include "CRPLib/Material.h"
+
+namespace CrpLib
+{
+    ICrpData* AllocateDataEntry(eEntryID id)
+    {
+        switch (id)
+        {
+        case eEntryID::Name:
+            return new CRawData();
+        case eEntryID::Vertex:
+        case eEntryID::Normal:
+        case eEntryID::Cull:
+            return new CVector4();
+        case eEntryID::UV:
+            return new CVector2();
+        case eEntryID::Effect:
+            return new CEffect();
+        case eEntryID::Transform:
+            return new CMatrix();
+        case eEntryID::Part:
+            return new CPart();
+        case eEntryID::Base:
+            return new CBase();
+        case eEntryID::BPlanes:
+            return new CBPlanes();
+        case eEntryID::Material:
+            return new CMaterial();
+        default:
+            return new CRawData();
         }
-        return data;
     }
-
-}
+} // namespace CrpLib

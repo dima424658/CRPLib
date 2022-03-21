@@ -1,63 +1,44 @@
 #pragma once
 
+#include <vector>
+
 #include "CRPLib/Interfaces.h"
 #include "CRPLib/Common.h"
 
-#include <memory.h>
-#include <fstream>
-
-namespace CrpLib {
-
-    class CBase :
-            public ICrpData {
+namespace CrpLib
+{
+    class CBase : public ICrpData
+    {
     private:
+        BaseFlags m_Flags = {}; // BASE_FLAGS
+        int m_Zero1 = 0, m_Zero2 = 0;
 
-        int m_Flags;    // BASE_FLAGS
-        int m_Zero1, m_Zero2;
-        int m_LevelCount;
+        int m_HasFloats = 0;
+        float m_pFloats[12] = {};
 
-        int m_HasFloats;
-        float m_pFloats[12];
-
-        tBaseInfo m_BaseInfo;
+        tBaseInfo m_BaseInfo{};
 
         tVector4 m_Unk;
 
-        tLevelMask *m_pLevMasks;
-
-        bool m_Init;
-
-        // clean up helper
-        void FreeData();
+        std::vector<tLevelMask> m_pLevMasks;
 
     public:
-        /// functions start here ///
-        CBase(void);
+        void Read(std::istream &is, ICrpEntry *entry) override;
+        void Write(std::ostream &os) override;
 
-        ~CBase(void);
-
-        void Read(std::fstream *file, ICrpEntry *entry);
-
-        void Write(std::fstream *file);
-
-        int GetEntryLength();
-
-        int GetEntryCount();
+        int GetEntryLength() override;
+        int GetEntryCount() override;
 
         void CreateLevels(int LevCount, int Start = 1);
-
         int GetLevelCount();
+        tLevelMask &GetLevel(size_t i);
 
-        tLevelMask *GetLevel(int i);
-
-        BASE_FLAGS GetFlags();
-
-        void SetFlags(BASE_FLAGS flags);
+        BaseFlags GetFlags();
+        void SetFlags(BaseFlags flags);
 
         void SetHasFloats(bool val);
-
         float *GetFloats();
 
-        tBaseInfo *GetBaseInfo();
+        tBaseInfo &GetBaseInfo();
     };
-}
+} // namespace CrpLib

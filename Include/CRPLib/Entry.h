@@ -11,7 +11,7 @@ using namespace std;
 namespace CrpLib {
     class CEntry : public ICrpEntry {
     private:
-        ENTRY_ID m_Id;
+        eEntryID m_Id;
         int m_Index, m_Flags, m_Length, m_Count, m_Offs;
         int m_RealOffs;
 
@@ -23,19 +23,19 @@ namespace CrpLib {
     public:
         CEntry(void);
 
-        CEntry(ENTRY_ID id, int index);
+        CEntry(eEntryID id, int index);
 
         ~CEntry(void);
 
-        void Read(std::fstream *file);
+        void Read(std::istream &is) override;
 
-        void WriteEntry(std::fstream *file);
+        void WriteEntry(std::ostream &os) override;
 
-        void WriteData(std::fstream *file);
+        void WriteData(std::ostream &os) override;
 
         // -- accessors --
 
-        ENTRY_ID GetId();
+        eEntryID GetId();
 
         int GetIndex();
 
@@ -69,15 +69,15 @@ namespace CrpLib {
 
         CEntry *GetPartEntry(int Level, int PartIndex);
 
-        CEntry *GetDataEntry(ENTRY_ID Id, int Level, int AnimIndex = 0, bool Damaged = false);
+        CEntry *GetDataEntry(eEntryID Id, int Level, int AnimIndex = 0, bool Damaged = false);
 
-        CEntry *GetSubEntry(ENTRY_ID Id, int Index = 0);
+        CEntry *GetSubEntry(eEntryID Id, int Index = 0);
 
         // -- new methods --
 
-        CEntry *NewSubEntry(ENTRY_ID Id, int Index = 0, bool Allocate = true);
+        CEntry *NewSubEntry(eEntryID Id, int Index = 0, bool Allocate = true);
 
-        CEntry *NewDataEntry(ENTRY_ID Id, int Level, int AnimIndex = 0, bool Damaged = false, bool Anim = false,
+        CEntry *NewDataEntry(eEntryID Id, int Level, int AnimIndex = 0, bool Damaged = false, bool Anim = false,
                              bool Allocate = true);
 
         CEntry *NewPartEntry(int Level, int PartIndex, bool Allocate = true);

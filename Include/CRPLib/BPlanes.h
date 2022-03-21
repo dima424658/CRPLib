@@ -1,29 +1,29 @@
 #pragma once
 
+#include <vector>
+
 #include "CRPLib/Interfaces.h"
 #include "CRPLib/Common.h"
-#include "CRPLib/Entry.h"
 
-#include <fstream>
-
-namespace CrpLib {
-    class CBPlanes : public ICrpData {
+namespace CrpLib
+{
+    class CBPlanes : public ICrpData
+    {
     private:
-        int m_Unk1, m_Unk2;
-        int m_Count;
-        tVector4 *m_pVertices;
-        bool m_Init;
-        // clean up helper
-        void FreeData();
+        int m_Unk1 = 0, m_Unk2 = 0;
+
+        std::vector<tVector4> m_pVertices;
+
     public:
-        CBPlanes(void);
-        ~CBPlanes(void);
-        void Read(std::fstream *file, ICrpEntry *entry);
-        void Write(std::fstream *file);
-        int GetEntryLength();
-        int GetEntryCount();
-        void SetCount(int value);
-        int GetCount();
+        void Read(std::istream &is, ICrpEntry *entry) override;
+        void Write(std::ostream &os) override;
+
+        int GetEntryLength() override;
+        int GetEntryCount() override;
+
+        void SetCount(size_t value);
+        size_t GetCount();
+        
         tVector4 *GetVertices();
     };
-}
+} // namespace CrpLib

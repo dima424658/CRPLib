@@ -1,47 +1,32 @@
 #pragma once
 
+#include <vector>
+
 #include "CRPLib/Interfaces.h"
 #include "CRPLib/Common.h"
-#include "CRPLib/Entry.h"
 
-namespace CrpLib {
-
-    class CVector2 :
-            public ICrpData {
+namespace CrpLib
+{
+    class CVector2 : public ICrpData
+    {
     private:
-        tVector2 *m_pData;
-        int m_Count;
-        bool m_Init;
-
-        // clean up helper
-        void FreeData();
+        std::vector<tVector2> m_pData;
 
     public:
+        CVector2() = default;
+        CVector2(tVector2 *pData, size_t count);
 
-        CVector2(void);
+        void Read(std::istream &is, ICrpEntry *entry) override;
+        void Write(std::ostream &os) override;
 
-        CVector2(tVector2 *pData, int count);
+        int GetEntryLength() override;
+        int GetEntryCount() override;
 
-        ~CVector2(void);
+        // Accessors and modifiers
+        void SetItem(size_t index, tVector2 value);
+        tVector2 &GetItem(size_t index);
 
-        void Read(std::fstream *file, ICrpEntry *entry);
-
-        void Write(std::fstream *file);
-
-        int GetEntryLength();
-
-        int GetEntryCount();
-
-        // accessors and modifiers
-
-        void SetItem(int index, tVector2 *value);
-
-        tVector2 *GetItem(int index);
-
-        int GetCount();
-
-        void SetCount(int count);
-
+        size_t GetCount();
+        void SetCount(size_t count);
     };
-
-}
+} // namespace CrpLib

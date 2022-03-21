@@ -1,91 +1,61 @@
 #pragma once
 
 #include "CRPLib/Interfaces.h"
-#include "CRPLib/Entry.h"
 #include "CRPLib/Common.h"
 
-#include <cstring>
-#include <fstream>
+#include <vector>
 
 /*
-
-	NOTE: CEntry->Count is number of indices
-			NOT number of triangles
-
+    NOTE: CEntry->Count is number of indices NOT number of triangles
 */
 
-namespace CrpLib {
-
-    class CPart :
-            public ICrpData {
+namespace CrpLib
+{
+    class CPart : public ICrpData
+    {
     private:
-
-        short m_FillMode;        // D3DFILLMODE
-        short m_TransInfo;        // PART_TRANS
+        short m_FillMode;  // D3DFILLMODE
+        ePartTrans m_TransInfo; // PART_TRANS
 
         short m_Mat;
-        short m_Unk1;
+        short m_Unk1 = 0x8000;
 
         tVector4 m_BSphere;
         tVector4 m_Unk2;
 
-        int m_InfoCount;
-        int m_IndexCount;
-
-        tPartInfo *m_pInfo;
-        tPartIndex *m_pIndex;
-        unsigned char *m_pIndices;
-        int m_IndiceCount;            // total count for write
-        bool m_Init;
-
-        // clean up helper
-        void FreeData();
+        std::vector<tPartInfo> m_pInfo;
+        std::vector<tPartIndex> m_pIndex;
+        std::vector<char> m_pIndices;
 
     public:
+        void Read(std::istream &is, ICrpEntry *entry) override;
+        void Write(std::ostream &os) override;
 
-        CPart(void);
-
-        ~CPart(void);
-
-        void Read(std::fstream *file, ICrpEntry *entry);
-
-        void Write(std::fstream *file);
-
-        int GetEntryLength();
-
-        int GetEntryCount();
+        int GetEntryLength() override;
+        int GetEntryCount() override;
 
         // inits an empty CPart with required Info and Index entries
-        void InitStorage(ICrpEntry *entry, int indiceCount, RM_NAME rm);
+        void InitStorage(ICrpEntry *entry, int indiceCount, eRMName rm);
 
         short GetFillMode();
-
         void SetFillMode(short value);
 
-        PART_TRANS GetTransInfo();
-
-        void SetTransInfo(PART_TRANS value);
+        ePartTrans GetTransInfo();
+        void SetTransInfo(ePartTrans value);
 
         short GetMaterial();
-
         void SetMaterial(short value);
 
-        tVector4 *GetBoundingSphere();
+        tVector4 &GetBoundingSphere();
 
-        int GetInfoCount();
+        size_t GetInfoCount();
+        size_t GetIndexCount();
 
-        int GetIndexCount();
+        tPartInfo &GetInfo(size_t index);
+        tPartIndex &GetIndex(size_t index);
+        char &GetIndices(size_t index);
 
-        tPartInfo *GetInfo(int index);
-
-        tPartIndex *GetIndex(int index);
-
-        unsigned char *GetIndices(int index);
-
-        int FindInfo(INFOROW_ID ird);
-
-        int FindIndex(INDEXROW_ID ird);
-
+        size_t FindInfo(eInfoRowID ird);
+        size_t FindIndex(eIndexRowID ird);
     };
-
-}
+} // namespace CrpLib

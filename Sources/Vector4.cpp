@@ -1,69 +1,53 @@
 #include "CRPLib/Vector4.h"
 
-namespace CrpLib {
+#include "CRPLib/Entry.h"
 
-    void CVector4::FreeData() {
-        if (m_Init)
-            delete[] m_pData;
+namespace CrpLib
+{
+    CVector4::CVector4(tVector4 *pData, size_t count) : m_pData{pData, pData + count}
+    {
     }
 
-    CVector4::CVector4(void) {
-        m_Init = false;
+    void CVector4::Read(std::istream &is, ICrpEntry *entry)
+    {
+        m_pData.resize(dynamic_cast<CEntry *>(entry)->GetCount());
+
+        is.read(reinterpret_cast<char *>(m_pData.data()), sizeof(decltype(m_pData)::value_type) * m_pData.size());
     }
 
-    CVector4::CVector4(tVector4 *pData, int count) {
-        m_Init = true;
-        m_pData = new tVector4[count];
-        memcpy(m_pData, pData, count * sizeof(tVector4));
-        m_Count = count;
+    void CVector4::Write(std::ostream &os)
+    {
+        os.write(reinterpret_cast<char *>(m_pData.data()), sizeof(decltype(m_pData)::value_type) * m_pData.size());
     }
 
-    CVector4::~CVector4(void) {
-        FreeData();
+    int CVector4::GetEntryLength()
+    {
+        return sizeof(decltype(m_pData)::value_type) * m_pData.size();
     }
 
-    void CVector4::Read(std::fstream *file, ICrpEntry *entry) {
-        FreeData();
-        m_Init = true;
-
-        CEntry *en = (CEntry *) entry;
-        m_Count = en->GetCount();
-        m_pData = new tVector4[m_Count];
-        file->read((char *) m_pData, m_Count * sizeof(tVector4));
+    int CVector4::GetEntryCount()
+    {
+        return m_pData.size();
     }
 
-    void CVector4::Write(std::fstream *file) {
-        file->write((char *) m_pData, m_Count * sizeof(tVector4));
+    // Accessors and modifiers
+    void CVector4::SetItem(size_t index, tVector4 value)
+    {
+        m_pData[index] = std::move(value);
     }
 
-    int CVector4::GetEntryLength() {
-        return m_Count * 0x10;
+    tVector4 &CVector4::GetItem(size_t index)
+    {
+        return m_pData[index];
     }
 
-    int CVector4::GetEntryCount() {
-        return m_Count;
+    size_t CVector4::GetCount()
+    {
+        return m_pData.size();
     }
 
-    // accessors and modifiers
-
-    void CVector4::SetItem(int index, tVector4 *value) {
-        m_pData[index] = *value;
+    void CVector4::SetCount(size_t count)
+    {
+        m_pData.resize(count);
     }
-
-    tVector4 *CVector4::GetItem(int index) {
-        return &m_pData[index];
-    }
-
-    int CVector4::GetCount() {
-        return m_Count;
-    }
-
-    void CVector4::SetCount(int count) {
-        FreeData();
-        m_Init = true;
-        m_pData = new tVector4[count];
-        m_Count = count;
-    }
-
-
-} // namespace
+} // namespace CrpLib
