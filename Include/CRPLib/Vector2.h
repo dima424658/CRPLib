@@ -15,6 +15,7 @@ namespace CrpLib
     public:
         CVector2() = default;
         CVector2(tVector2 *pData, size_t count);
+        virtual ~CVector2() = default;
 
         void Read(std::istream &is, ICrpEntry *entry) override;
         void Write(std::ostream &os) override;

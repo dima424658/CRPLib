@@ -25,6 +25,6 @@ namespace CrpLib
         virtual void Write(std::ostream &os) = 0;
 
         virtual int GetEntryLength() = 0;
-        virtual int GetEntryCount()  = 0;
+        virtual int GetEntryCount() = 0;
     };
 } // namespace CrpLib

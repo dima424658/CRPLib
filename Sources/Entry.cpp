@@ -1,53 +1,24 @@
+#include <algorithm>
+
 #include "CRPLib/Entry.h"
 
 namespace CrpLib
 {
-
-    CEntry::CEntry()
-    {
-        m_Id = (eEntryID)0;
-        m_Index = 0;
-        m_Length = 0;
-        m_Count = 0;
-
-        m_pData = NULL;
-    }
-
     CEntry::CEntry(eEntryID id, int index)
     {
         m_Id = id;
         m_Index = index;
-        m_Length = 0;
-        m_Count = 0;
-
-        m_pData = NULL;
-    }
-
-    CEntry::~CEntry(void)
-    {
-        if (m_Length == 0)
-        {
-            for (int i = 0; i < m_Count; i++)
-            {
-                delete ((ICrpEntry *)m_SubEntries[i]);
-            }
-            m_SubEntries.clear();
-        }
-        else
-        {
-            delete m_pData;
-        }
     }
 
     void CEntry::Read(std::istream &is)
     {
-
         int tmp1, tmp2;
+        int count;
 
-        m_RealOffs = (int)is.tellg();
+        m_RealOffset = is.tellg();
 
-        is.read((char *)&tmp1, 4);
-        is.read((char *)&tmp2, 4);
+        is.read(reinterpret_cast<char *>(&tmp1), sizeof(tmp1));
+        is.read(reinterpret_cast<char *>(&tmp2), sizeof(tmp2));
 
         m_Flags = tmp2 & 0xFF;
         m_Length = tmp2 >> 8;
@@ -56,49 +27,47 @@ namespace CrpLib
         {
             // id + index
             m_Index = tmp1 & 0xFFFF;
-            m_Id = (eEntryID)(tmp1 >> 16);
+            m_Id = static_cast<eEntryID>(tmp1 >> 16);
         }
         else
         {
             // just id
             m_Index = 0;
-            m_Id = (eEntryID)tmp1;
+            m_Id = static_cast<eEntryID>(tmp1);
         }
 
-        is.read((char *)&m_Count, 4);
-        is.read((char *)&m_Offs, 4);
+        is.read(reinterpret_cast<char *>(&count), sizeof(count));
+        is.read(reinterpret_cast<char *>(&m_Offset), sizeof(m_Offset));
 
         if (m_Length == 0)
         {
             // has subentries
 
-            m_Offs <<= 4;
-            m_pData = NULL;
+            m_Offset <<= 4;
+            m_pData = nullptr;
 
-            is.seekg(m_RealOffs + m_Offs, std::ios::beg);
+            is.seekg(m_RealOffset + m_Offset, std::ios::beg);
 
-            m_SubEntries.reserve(m_Count);
+            m_SubEntries.resize(count);
 
-            ICrpEntry *en;
-            for (int i = 0; i < m_Count; i++)
+            for (auto &entry : m_SubEntries)
             {
-                en = new CEntry();
-                en->Read(is);
-                m_SubEntries.push_back(en);
+                entry = std::make_unique<CEntry>();
+                entry->Read(is);
             }
 
-            is.seekg(m_RealOffs + 0x10, std::ios::beg);
+            is.seekg(m_RealOffset + 0x10, std::ios::beg);
         }
         else
         {
             // has data
 
-            is.seekg(m_RealOffs + m_Offs, std::ios::beg);
+            is.seekg(m_RealOffset + m_Offset, std::ios::beg);
 
-            m_pData = AllocateDataEntry(m_Id);
+            m_pData = std::unique_ptr<ICrpData>(AllocateDataEntry(m_Id));
             m_pData->Read(is, this);
 
-            is.seekg(m_RealOffs + 0x10, std::ios::beg);
+            is.seekg(m_RealOffset + 0x10, std::ios::beg);
         }
     }
 
@@ -106,26 +75,26 @@ namespace CrpLib
     {
 
         int tmp1, tmp2, tmp3;
-        int currOffs = (int)os.tellp();
+        auto currOffset = os.tellp();
+        int count = m_SubEntries.size();
 
         if (m_Flags & 0x1)
             tmp1 = m_Index | (static_cast<int>(m_Id) << 16);
         else
             tmp1 = static_cast<int>(m_Id);
 
-        tmp2 = m_Length << 8;
-        tmp2 |= m_Flags;
+        tmp2 = (m_Length << 8) | m_Flags;
 
-        os.write((char *)&tmp1, 4);
-        os.write((char *)&tmp2, 4);
-        os.write((char *)&m_Count, 4);
+        os.write(reinterpret_cast<char *>(&tmp1), sizeof(tmp1));
+        os.write(reinterpret_cast<char *>(&tmp2), sizeof(tmp2));
+        os.write(reinterpret_cast<char *>(&count), sizeof(count));
 
         if (m_Length == 0)
-            tmp3 = ((m_RealOffs - currOffs) >> 4);
+            tmp3 = (m_RealOffset - currOffset) >> 4;
         else
-            tmp3 = m_RealOffs - currOffs;
+            tmp3 = m_RealOffset - currOffset;
 
-        os.write((char *)&tmp3, 4);
+        os.write(reinterpret_cast<char *>(&tmp3), sizeof(tmp3));
     }
 
     void CEntry::WriteData(std::ostream &os)
@@ -164,15 +133,12 @@ namespace CrpLib
     {
         // REDEFINED!
         // return (m_Length!=0);
-        return (m_Id != eEntryID::Article);
+        return m_Id != eEntryID::Article;
     }
 
     ICrpData *CEntry::GetData()
     {
-        if (this != NULL)
-            return m_pData;
-        else
-            return NULL;
+        return m_pData.get();
     }
 
     // -- modifiers --
@@ -194,31 +160,32 @@ namespace CrpLib
 
     void CEntry::SetData(ICrpData *pData)
     {
-        if (m_pData != NULL)
-            delete m_pData;
-        m_pData = pData;
+        m_pData = std::unique_ptr<ICrpData>(pData);
     }
 
-    void CEntry::SetTargetOffs(int Offs)
+    void CEntry::SetTargetOffset(int Offset)
     {
-        m_RealOffs = Offs;
+        m_RealOffset = Offset;
     }
 
     // -- worker methods --
 
     CEntry *CEntry::GetSubEntry(int index)
     {
-        return (CEntry *)m_SubEntries[index];
+        return dynamic_cast<CEntry *>(m_SubEntries[index].get());
     }
 
     std::string CEntry::GetEntryType()
     {
-        char tmp[5];
-        int id = (int)m_Id;
+        std::string tmp;
+        tmp.resize(5);
+
+        auto id = static_cast<int>(m_Id);
         tmp[3] = id & 0xFF;
         tmp[2] = (id >> 8) & 0xFF;
         tmp[1] = (id >> 16) & 0xFF;
         tmp[0] = (id >> 24) & 0xFF;
+
         if (tmp[0] == 0)
         {
             tmp[0] = tmp[2];
@@ -229,13 +196,13 @@ namespace CrpLib
         {
             tmp[4] = 0;
         }
-        return std::string(tmp);
+
+        return tmp;
     }
 
     CEntry *CEntry::GetPartEntry(int Level, int PartIndex)
     {
-        int FinIndex;
-        FinIndex = (Level & 0xF) << 12;
+        int FinIndex = (Level & 0xF) << 12;
         FinIndex |= (PartIndex & 0xFFF);
 
         return GetSubEntry(eEntryID::Part, FinIndex);
@@ -243,8 +210,7 @@ namespace CrpLib
 
     CEntry *CEntry::GetDataEntry(eEntryID Id, int Level, int AnimIndex, bool Damaged)
     {
-        int FinIndex;
-        FinIndex = (Level & 0xF);
+        int FinIndex = (Level & 0xF);
         FinIndex |= ((AnimIndex & 0xFF) << 4);
         FinIndex |= (Damaged ? 0x8000 : 0);
 
@@ -253,18 +219,17 @@ namespace CrpLib
 
     CEntry *CEntry::GetSubEntry(eEntryID Id, int Index)
     {
-
         if (!IsDataEntry())
         {
-            for (int i = 0; i < m_Count; i++)
+            for (auto &it : m_SubEntries)
             {
-                CEntry *en = (CEntry *)m_SubEntries[i];
+                auto en = dynamic_cast<CEntry *>(it.get());
                 if ((en->m_Id == Id) && (en->m_Index == Index))
                     return en;
             }
         }
 
-        return NULL;
+        return nullptr;
     }
 
     // -- new methods --
@@ -272,37 +237,23 @@ namespace CrpLib
     // firstly a helper:
     void CEntry::InsertSubEntry(CEntry *newEn)
     {
-
         auto Id = static_cast<int>(newEn->GetId());
         if (Id < 0x10000)
             Id = (Id << 16) | (newEn->GetIndex());
 
-        bool inserted = false;
+        auto result = std::find_if(m_SubEntries.begin(), m_SubEntries.end(),
+                                   [Id](auto &it)
+                                   {
+                                       auto &en = dynamic_cast<CEntry &>(*it);
 
-        for (int i = 0; i < m_Count; i++)
-        {
-            CEntry *en = (CEntry *)m_SubEntries[i];
+                                       auto enId = static_cast<int>(en.GetId());
+                                       if (enId < 0x10000)
+                                           enId = (enId << 16) | (en.GetIndex());
 
-            auto enId = static_cast<int>(en->GetId());
-            if (enId < 0x10000)
-                enId = (enId << 16) | (en->GetIndex());
+                                        return enId > Id;
+                                   });
 
-            if (enId > Id)
-            {
-                // insert before i
-                inserted = true;
-                m_SubEntries.insert(m_SubEntries.begin() + i, newEn);
-                break;
-            }
-        }
-
-        if (!inserted)
-        {
-            // last entry
-            m_SubEntries.push_back(newEn);
-        }
-
-        m_Count++;
+        m_SubEntries.emplace(result, newEn);
     }
 
     CEntry *CEntry::NewSubEntry(eEntryID Id, int Index, bool Allocate)
@@ -325,7 +276,7 @@ namespace CrpLib
                 break;
             default:
                 flags = 0xFA;
-                if ((int)Id < 0x10000)
+                if (static_cast<int>(Id) < 0x10000)
                     flags |= 0x01;
             }
 
@@ -339,7 +290,7 @@ namespace CrpLib
         }
         else
         {
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -354,10 +305,13 @@ namespace CrpLib
 
             CEntry *newEn = new CEntry(Id, Index);
             int flags = 0x2;
+
             if ((int)Id < 0x10000)
                 flags |= 0x01;
+
             if (Damaged || Anim)
                 flags |= 0x80;
+
             flags |= ((Level & 0xF) << 3);
 
             newEn->SetFlags(flags);
@@ -370,7 +324,7 @@ namespace CrpLib
         }
         else
         {
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -396,7 +350,7 @@ namespace CrpLib
         }
         else
         {
-            return NULL;
+            return nullptr;
         }
     }
 } // namespace

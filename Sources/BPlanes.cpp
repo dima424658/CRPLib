@@ -6,20 +6,20 @@ namespace CrpLib
 {
     void CBPlanes::Read(std::istream &is, ICrpEntry *entry)
     {
-        is.read((char *) &m_Unk1, sizeof(m_Unk1));
-        is.read((char *) &m_Unk2, sizeof(m_Unk2));
+        is.read(reinterpret_cast<char*>(&m_Unk1), sizeof(m_Unk1));
+        is.read(reinterpret_cast<char*>(&m_Unk2), sizeof(m_Unk2));
 
         m_pVertices.resize(dynamic_cast<CEntry *>(entry)->GetCount());
 
-        is.read((char *) m_pVertices.data(), sizeof(decltype(m_pVertices)::value_type) * m_pVertices.size());
+        is.read(reinterpret_cast<char*>(m_pVertices.data()), sizeof(decltype(m_pVertices)::value_type) * m_pVertices.size());
     }
 
     void CBPlanes::Write(std::ostream &os)
     {
-        os.write((char *) &m_Unk1, sizeof(m_Unk1));
-        os.write((char *) &m_Unk2, sizeof(m_Unk2));
+        os.write(reinterpret_cast<char *>(&m_Unk1), sizeof(m_Unk1));
+        os.write(reinterpret_cast<char *>(&m_Unk2), sizeof(m_Unk2));
 
-        os.write((char *) m_pVertices.data(), sizeof(decltype(m_pVertices)::value_type) * m_pVertices.size());
+        os.write(reinterpret_cast<char *>(m_pVertices.data()), sizeof(decltype(m_pVertices)::value_type) * m_pVertices.size());
     }
 
     int CBPlanes::GetEntryLength()
@@ -46,5 +46,4 @@ namespace CrpLib
     {
         return m_pVertices.data();
     }
-
 } // namespace CrpLib

@@ -14,7 +14,7 @@ namespace CrpLib
     class CPart : public ICrpData
     {
     private:
-        short m_FillMode;  // D3DFILLMODE
+        short m_FillMode;       // D3DFILLMODE
         ePartTrans m_TransInfo; // PART_TRANS
 
         short m_Mat;
@@ -28,6 +28,10 @@ namespace CrpLib
         std::vector<char> m_pIndices;
 
     public:
+        CPart() = default;
+
+        virtual ~CPart() = default;
+
         void Read(std::istream &is, ICrpEntry *entry) override;
         void Write(std::ostream &os) override;
 

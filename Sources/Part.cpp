@@ -124,6 +124,8 @@ namespace CrpLib
             m_pInfo[2].RMOffs = 0xF;
             m_pInfo[3].RMOffs = 0x10;
             break;
+        default:
+            break;
         }
 
         m_pIndices.clear();

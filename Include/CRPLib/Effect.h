@@ -22,6 +22,8 @@ namespace CrpLib {
         tGlareInfo m_GlareInfo;
 
     public:
+        virtual ~CEffect() = default;
+
         virtual void Read(std::istream &is, ICrpEntry *entry);
         virtual void Write(std::ostream &os);
 

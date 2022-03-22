@@ -5,32 +5,30 @@
 
 #include <vector>
 #include <fstream>
+#include <memory>
 
-using namespace std;
-
-namespace CrpLib {
-    class CEntry : public ICrpEntry {
+namespace CrpLib
+{
+    class CEntry : public ICrpEntry
+    {
     private:
-        eEntryID m_Id;
-        int m_Index, m_Flags, m_Length, m_Count, m_Offs;
-        int m_RealOffs;
+        eEntryID m_Id{};
+        int m_Index = 0, m_Flags, m_Length = 0, m_Count = 0, m_Offset;
+        size_t m_RealOffset;
 
-        vector<ICrpEntry *> m_SubEntries;
-        ICrpData *m_pData;
+        std::vector<std::unique_ptr<ICrpEntry>> m_SubEntries;
+        std::unique_ptr<ICrpData> m_pData;
 
         void InsertSubEntry(CEntry *newEn);
 
     public:
-        CEntry(void);
-
+        CEntry() = default;
         CEntry(eEntryID id, int index);
-
-        ~CEntry(void);
+        virtual ~CEntry() = default;
 
         void Read(std::istream &is) override;
 
         void WriteEntry(std::ostream &os) override;
-
         void WriteData(std::ostream &os) override;
 
         // -- accessors --
@@ -59,7 +57,7 @@ namespace CrpLib {
 
         void SetData(ICrpData *pData);
 
-        void SetTargetOffs(int Offs);
+        void SetTargetOffset(int Offs);
 
         // -- worker methods --
 
@@ -81,7 +79,6 @@ namespace CrpLib {
                              bool Allocate = true);
 
         CEntry *NewPartEntry(int Level, int PartIndex, bool Allocate = true);
-
     };
 
 }

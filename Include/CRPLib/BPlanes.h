@@ -15,6 +15,8 @@ namespace CrpLib
         std::vector<tVector4> m_pVertices;
 
     public:
+        virtual ~CBPlanes() = default;
+        
         void Read(std::istream &is, ICrpEntry *entry) override;
         void Write(std::ostream &os) override;
 
@@ -23,7 +25,7 @@ namespace CrpLib
 
         void SetCount(size_t value);
         size_t GetCount();
-        
+
         tVector4 *GetVertices();
     };
 } // namespace CrpLib

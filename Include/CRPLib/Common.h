@@ -154,13 +154,13 @@ namespace CrpLib
     };
 
     template <typename T>
-    constexpr short levelMin(T x)
+    constexpr T levelMin(T x)
     {
         return x << 12;
     }
 
     template <typename T>
-    constexpr short levelMax(T x)
+    constexpr T levelMax(T x)
     {
         return levelMin(x) | 0xFFF;
     }
@@ -282,48 +282,25 @@ namespace CrpLib
         };
 
     public:
-        unsigned char GeomIndex;
-        unsigned char TypeIndex;
-        unsigned char GeomUnk;
-        unsigned char GeomPlace;
+        unsigned char GeomIndex = 0;
+        unsigned char TypeIndex = 0;
+        unsigned char GeomUnk = 0;
+        unsigned char GeomPlace = 0;
 
-        eWheelType WheelType;
-        eExtraType ExtraType;
-        eTextureType TextureType;
-        eGeomType GeomType;
+        eWheelType WheelType = eWheelType::NonWheel;
+        eExtraType ExtraType = eExtraType::Type1;
+        eTextureType TextureType = eTextureType::Default;
+        eGeomType GeomType = eGeomType::Default;
 
-        unsigned char AnimCount;
-        eAnimType AnimType;
-        eLevel LevelIndex; // see LEVELINDEX_n (n=LEVEL,INDEX,CREATE)
-        unsigned char Zero1;
+        unsigned char AnimCount = 1;
+        eAnimType AnimType = eAnimType::None;
+        eLevel LevelIndex = eLevel::Body; // see LEVELINDEX_n (n=LEVEL,INDEX,CREATE)
+        unsigned char Zero1 = 0;
 
-        eGlareType GlareType;
-        unsigned char InteriorVisible; // 1 if true
-        unsigned char Hand;            // 1 if true
-        unsigned char Zero2;
-
-        tBaseInfo()
-        {
-            GeomIndex = 0;
-            TypeIndex = 0;
-            GeomUnk = 0;
-            GeomPlace = 0;
-
-            WheelType = eWheelType::NonWheel;
-            ExtraType = eExtraType::Type1;
-            TextureType = eTextureType::Default;
-            GeomType = eGeomType::Default;
-
-            AnimCount = 1;
-            AnimType = eAnimType::None;
-            LevelIndex = eLevel::Body;
-            Zero1 = 0;
-
-            GlareType = eGlareType::None;
-            InteriorVisible = 1;
-            Hand = 0;
-            Zero2 = 0;
-        }
+        eGlareType GlareType = eGlareType::None;
+        unsigned char InteriorVisible = 1; // 1 if true
+        unsigned char Hand = 0;            // 1 if true
+        unsigned char Zero2 = 0;
     };
 
     enum class BaseFlags : int
@@ -337,25 +314,8 @@ namespace CrpLib
     {
         float x, y, z, w;
 
-        tVector4()
+        tVector4(float x = 0, float y = 0, float z = 0, float w = 0) : x{x}, y{y}, z{z}, w{w}
         {
-            this->x = this->y = this->z = this->w = 0.0f;
-        }
-
-        tVector4(float x, float y, float z)
-        {
-            this->x = x;
-            this->y = y;
-            this->z = z;
-            this->w = 0.0f;
-        }
-
-        tVector4(float x, float y, float z, float w)
-        {
-            this->x = x;
-            this->y = y;
-            this->z = z;
-            this->w = w;
         }
 
         tVector4 operator+(const tVector4 &v)
@@ -373,16 +333,10 @@ namespace CrpLib
     {
         float x, y, z;
 
-        tVector3()
-        {
-            this->x = this->y = this->z = 0.0f;
-        }
+        tVector3() = default;
 
-        tVector3(float x, float y, float z)
+        tVector3(float x = 0, float y = 0, float z = 0) : x{x}, y{y}, z{z}
         {
-            this->x = x;
-            this->y = y;
-            this->z = z;
         }
     };
 
@@ -390,15 +344,8 @@ namespace CrpLib
     {
         float u, v;
 
-        tVector2()
+        tVector2(float u = 0, float v = 0) : u{u}, v{v}
         {
-            this->u = this->v = 0.0f;
-        }
-
-        tVector2(float u, float v)
-        {
-            this->u = u;
-            this->v = v;
         }
     };
 

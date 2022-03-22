@@ -10,7 +10,7 @@ namespace CrpLib
     class CBase : public ICrpData
     {
     private:
-        BaseFlags m_Flags = {}; // BASE_FLAGS
+        BaseFlags m_Flags = {};
         int m_Zero1 = 0, m_Zero2 = 0;
 
         int m_HasFloats = 0;
@@ -23,6 +23,8 @@ namespace CrpLib
         std::vector<tLevelMask> m_pLevMasks;
 
     public:
+        virtual ~CBase() = default;
+        
         void Read(std::istream &is, ICrpEntry *entry) override;
         void Write(std::ostream &os) override;
 

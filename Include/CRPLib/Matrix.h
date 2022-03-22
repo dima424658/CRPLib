@@ -21,6 +21,8 @@ namespace CrpLib
         CMatrix() = default;
         CMatrix(float *values);
 
+        virtual ~CMatrix() = default;
+
         void Read(std::istream &is, ICrpEntry *entry) override;
         void Write(std::ostream &os) override;
 

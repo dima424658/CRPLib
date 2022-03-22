@@ -5,6 +5,9 @@ project(CRPLib)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
+add_compile_options(-Wall)
+
 set(CRP_SOURCES 
     ${CMAKE_SOURCE_DIR}/Sources/Base.cpp
     ${CMAKE_SOURCE_DIR}/Sources/BPlanes.cpp

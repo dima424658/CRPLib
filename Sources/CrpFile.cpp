@@ -2,6 +2,12 @@
 
 #include "CRPLib/CrpFile.h"
 
+template <typename T, typename U>
+constexpr auto alignOffset(T x, U a)
+{
+    return (x % a == 0) ? x : (x + (a - x % a));
+}
+
 namespace CrpLib
 {
     void CCrpFile::Read(std::istream &is)
@@ -28,37 +34,29 @@ namespace CrpLib
         m_Articles.resize(articleCount);
         for (auto &article : m_Articles)
         {
-            article = new CEntry();
+            article = std::make_unique<CEntry>();
             article->Read(is);
         }
 
         m_Misc.resize(miscCount);
         for (auto &misc : m_Misc)
         {
-            misc = new CEntry();
+            misc = std::make_unique<CEntry>();
             misc->Read(is);
         }
     }
 
     void CCrpFile::Write(std::ostream &os)
     {
-#ifdef SAVE_COMPRESS
-        CMemFile file(131072);
-#else
-        std::fstream file;
-#endif
-
-        int tmp, count, entryOffset, dataOffset;
-
         // verify count/length for all!
         for (auto &it : m_Articles)
         {
-            auto &arti = dynamic_cast<CEntry &>(*it);
+            auto &article = dynamic_cast<CEntry &>(*it);
 
-            for (int j = 0; j < arti.GetCount(); j++)
+            for (int i = 0; i < article.GetCount(); ++i)
             {
-                CEntry *en = arti.GetSubEntry(j);
-                ICrpData *data = en->GetData();
+                auto en = article.GetSubEntry(i);
+                auto data = en->GetData();
 
                 if (data->GetEntryCount() != -1)
                     en->SetCount(data->GetEntryCount());
@@ -68,14 +66,16 @@ namespace CrpLib
             }
         }
 
-        for (int i = 0; i < m_Misc.size(); i++)
+        for (auto &it : m_Misc)
         {
-            CEntry *en = GetMisc(i);
-            ICrpData *data = en->GetData();
+            auto& entry = dynamic_cast<CEntry &>(*it);
+            auto data = entry.GetData();
+
             if (data->GetEntryCount() != -1)
-                en->SetCount(data->GetEntryCount());
+                entry.SetCount(data->GetEntryCount());
+
             if (data->GetEntryLength() != -1)
-                en->SetLength(data->GetEntryLength());
+                entry.SetLength(data->GetEntryLength());
         }
 
 #ifdef SAVE_PROTECT
@@ -85,157 +85,158 @@ namespace CrpLib
         // write the header
 #ifdef SAVE_PROTECT
         int newId = (int)m_Id ^ 0x20;
-        file.Write(&newId, 4);
+        os.write(reinterpret_cast<char *>(&newId), sizeof(newId));
 #else
-        file.write((char *)&m_Id, 4);
+        os.write(reinterpret_cast<char *>(&m_Id), sizeof(m_Id));
 #endif
-        tmp = m_Flags | (m_Articles.size() << 5);
-        file.write((char *)&tmp, 4);
+        int tmp = m_Flags | (m_Articles.size() << 5);
+        os.write(reinterpret_cast<char *>(&tmp), sizeof(tmp));
 
         int miscCount = m_Misc.size();
-        file.write((char *)&miscCount, 4);
+        os.write(reinterpret_cast<char *>(&miscCount), sizeof(miscCount));
         tmp = m_Offset >> 4;
-        file.write((char *)&tmp, 4);
+        os.write(reinterpret_cast<char *>(&tmp), sizeof(tmp));
 
 #ifdef SAVE_PROTECT
         for (int i = 0; i < m_Articles.size(); i++)
         {
             tmp = ID_ARTI;
-            file.Write(&tmp, 4);
+            os.write(reinterpret_cast<char *>(&tmp), sizeof(tmp));
             tmp = 0x1A;
-            file.Write(&tmp, 4);
+            os.write(reinterpret_cast<char *>(&tmp), sizeof(tmp));
             tmp = 3 * (i + 1) * (m_Misc.size() + m_Articles.size()) / 2 + 5;
-            file.Write(&tmp, 4);
+            os.write(reinterpret_cast<char *>(&tmp), sizeof(tmp));
             tmp = ((m_Misc.size() * 3 + m_Articles.size() + 6) * 43212) ^ (0x85850923 * i);
             tmp &= (((i) << 5) - 1);
-            file.Write(&tmp, 4);
+            os.write(reinterpret_cast<char *>(&tmp), sizeof(tmp));
         }
 #endif
 
-        file.seekg(m_Offset, std::ios::beg);
+        os.seekp(m_Offset, std::ios::beg);
 
-        count = m_Articles.size() + m_Misc.size();
-        for (int i = 0; i < m_Articles.size(); i++)
-            count += ((CEntry *)m_Articles[i])->GetCount();
+        int count = m_Articles.size() + m_Misc.size();
 
-        dataOffset = m_Offset + count * 0x10 + 0x10;
-        file.seekg(dataOffset, std::ios::beg);
-        file.write(cCRPGeneratedBy.data(), cCRPGeneratedBy.size());
+        for (auto &it : m_Articles)
+            count += dynamic_cast<CEntry &>(*it).GetCount();
 
-        dataOffset = ALIGN_OFFS((int)file.tellg(), 0x100);
+        size_t dataOffset = m_Offset + count * 0x10 + 0x10;
+        os.seekp(dataOffset, std::ios::beg);
+        os.write(cCRPGeneratedBy.data(), cCRPGeneratedBy.size());
 
-        entryOffset = m_Offset + (m_Articles.size() + m_Misc.size()) * 0x10;
-        file.seekg(entryOffset, std::ios::beg);
+        dataOffset = alignOffset(os.tellp(), 0x100);
 
-        for (int i = 0; i < m_Articles.size(); i++)
+        size_t entryOffset = m_Offset + (m_Articles.size() + m_Misc.size()) * 0x10;
+        os.seekp(entryOffset, std::ios::beg);
+
+        for (auto &it : m_Articles)
         {
-            CEntry *arti = (CEntry *)m_Articles[i];
-            arti->SetTargetOffs(entryOffset);
-            for (int j = 0; j < arti->GetCount(); j++)
+            auto &article = dynamic_cast<CEntry &>(*it);
+
+            article.SetTargetOffset(entryOffset);
+            for (int i = 0; i < article.GetCount(); ++i)
             {
-                CEntry *en = (CEntry *)(arti->GetSubEntry(j));
+                auto& entry = dynamic_cast<CEntry&>(*article.GetSubEntry(i));
 
-                en->SetTargetOffs(dataOffset);
+                entry.SetTargetOffset(dataOffset);
 
-                // write the data
-                file.seekg(dataOffset, std::ios::beg);
-                en->WriteData(file);
-                dataOffset = ALIGN_OFFS((int)file.tellg(), 0x10);
+                // Write the data
+                os.seekp(dataOffset, std::ios::beg);
+                entry.WriteData(os);
+                dataOffset = alignOffset(os.tellp(), 0x10);
 
-                // write the entry
-                file.seekg(entryOffset, std::ios::beg);
-                en->WriteEntry(file);
+                // Write the entry
+                os.seekp(entryOffset, std::ios::beg);
+                entry.WriteEntry(os);
                 entryOffset += 0x10;
             }
-            dataOffset = ALIGN_OFFS(dataOffset, 0x100);
+            dataOffset = alignOffset(dataOffset, 0x100);
         }
 
-        file.seekg(m_Offset, std::ios::beg);
+        os.seekp(m_Offset, std::ios::beg);
 
-        for (int i = 0; i < m_Articles.size(); i++)
+        for (auto &it : m_Articles)
         {
-            CEntry *arti = (CEntry *)m_Articles[i];
-            arti->WriteEntry(file);
+            auto &article = dynamic_cast<CEntry &>(*it);
+            article.WriteEntry(os);
         }
 
-        entryOffset = (int)file.tellg();
-        for (int i = 0; i < m_Misc.size(); i++)
+        entryOffset = os.tellp();
+
+        for (auto &it : m_Misc)
         {
-            CEntry *en = (CEntry *)m_Misc[i];
-            en->SetTargetOffs(dataOffset);
+            auto &entry = dynamic_cast<CEntry &>(*it);
+            entry.SetTargetOffset(dataOffset);
 
-            file.seekg(dataOffset, std::ios::beg);
-            en->WriteData(file);
-            dataOffset = ALIGN_OFFS((int)file.tellg(), 0x10);
+            os.seekp(dataOffset, std::ios::beg);
+            entry.WriteData(os);
+            dataOffset = alignOffset(os.tellp(), 0x10);
 
-            file.seekg(entryOffset, std::ios::beg);
-            en->WriteEntry(file);
+            os.seekp(entryOffset, std::ios::beg);
+            entry.WriteEntry(os);
             entryOffset += 0x10;
         }
 
-        dataOffset = ALIGN_OFFS(dataOffset, 0x100);
-        file.seekg(dataOffset - 1, std::ios::beg);
-        file.write("\0", 1);
-
-#ifdef SAVE_COMPRESS
-        unsigned int fLength = (unsigned int)file.GetLength();
-        unsigned char *fData = file.Detach();
-        CompressSave(fData, fLength, (char *)(LPCTSTR)filename);
-#endif
+        dataOffset = alignOffset(dataOffset, 0x100);
+        os.seekp(dataOffset - 1, std::ios::beg);
+        os.write("\0", 1);
     }
 
     // -- accessors --
 
-    int CCrpFile::GetArticleCount()
+    size_t CCrpFile::GetArticleCount()
     {
         return m_Articles.size();
     }
 
-    CEntry *CCrpFile::GetArticle(int index)
+    CEntry *CCrpFile::GetArticle(size_t index)
     {
         if (index < m_Articles.size())
-            return dynamic_cast<CEntry *>(m_Articles[index]);
+            return dynamic_cast<CEntry *>(m_Articles[index].get());
         else
             return nullptr;
     }
 
-    int CCrpFile::GetMiscCount()
+    size_t CCrpFile::GetMiscCount()
     {
         return m_Misc.size();
     }
 
-    CEntry *CCrpFile::GetMisc(int index)
+    CEntry *CCrpFile::GetMisc(size_t index)
     {
         if (index < m_Misc.size())
-            return dynamic_cast<CEntry *>(m_Misc[index]);
+            return dynamic_cast<CEntry *>(m_Misc[index].get());
         else
             return nullptr;
     }
 
-    CEntry *CCrpFile::GetMisc(eEntryID id, int index)
+    CEntry *CCrpFile::GetMisc(eEntryID id, size_t index)
     {
         auto result = std::find_if(m_Misc.begin(), m_Misc.end(),
                                    [id, index](auto &it)
                                    {
-                                       CEntry *en = dynamic_cast<CEntry *>(it);
-                                       return en->GetId() == id && en->GetIndex() == index;
+                                       auto &entry = dynamic_cast<CEntry&>(*it);
+                                       return entry.GetId() == id && entry.GetIndex() == index;
                                    });
 
         if (result == m_Misc.end())
             return nullptr;
         else
-            return dynamic_cast<CEntry *>(*result.base());
+            return dynamic_cast<CEntry *>(result->get());
     }
 
-    int CCrpFile::FindMisc(eEntryID id, int index)
+    int CCrpFile::FindMisc(eEntryID id, size_t index)
     {
-        for (int i = 0; i < m_Misc.size(); i++)
-        {
-            CEntry *en = (CEntry *)m_Misc[i];
-            if (en->GetId() == id && en->GetIndex() == index)
-                return i;
-        }
-        return -1;
+        auto result = std::find_if(m_Misc.begin(), m_Misc.end(),
+                                   [id, index](auto &it)
+                                   {
+                                       auto &entry = dynamic_cast<CEntry&>(*it);
+                                       return entry.GetId() == id && entry.GetIndex() == index;
+                                   });
+
+        if (result == m_Misc.end())
+            return -1;
+        else
+            return std::distance(m_Misc.begin(), result);
     }
 
     int CCrpFile::GetFlags()
@@ -267,56 +268,44 @@ namespace CrpLib
         if (Id < 0x10000)
             Id = (Id << 16) | (newEn->GetIndex());
 
-        bool inserted = false;
+        auto it = std::find_if(m_Misc.begin(), m_Misc.end(),
+                               [Id](const auto &it)
+                               {
+                                   auto &entry = dynamic_cast<CEntry &>(*it);
+                                   auto enId = static_cast<int>(entry.GetId());
+                                   if (enId < 0x10000)
+                                       enId = (enId << 16) | (entry.GetIndex());
 
-        for (int i = 0; i < m_Misc.size(); i++)
-        {
-            CEntry *en = (CEntry *)m_Misc[i];
-            auto enId = static_cast<int>(en->GetId());
-            if (enId < 0x10000)
-                enId = (enId << 16) | (en->GetIndex());
+                                   return enId > Id;
+                               });
 
-            if (enId > Id)
-            {
-                // insert before i
-                inserted = true;
-                m_Misc.insert(m_Misc.begin() + i, newEn);
-                break;
-            }
-        }
-
-        if (!inserted)
-        {
-            // last entry
-            m_Misc.push_back(newEn);
-        }
+        m_Misc.emplace(it, newEn);
     }
 
-    CEntry *CCrpFile::NewArticle(void)
+    CEntry *CCrpFile::NewArticle()
     {
-        CEntry *en = new CEntry(eEntryID::Article, 0);
-        en->SetFlags(0x1A);
-        m_Articles.push_back(en);
+        auto entry = new CEntry{eEntryID::Article, 0};
+        entry->SetFlags(0x1A);
+        m_Articles.emplace_back(entry);
 
-        return en;
+        return entry;
     }
 
-    CEntry *CCrpFile::NewMisc(eEntryID id, int index, bool Allocate)
+    CEntry *CCrpFile::NewMisc(eEntryID id, size_t index, bool Allocate)
     {
-        CEntry *en = new CEntry(id, index);
+        auto entry = new CEntry{id, index};
 
         int flags = 0xFA;
-        if ((int)id < 0x10000)
+        if (static_cast<int>(id) < 0x10000)
             flags |= 0x01;
-        en->SetFlags(flags);
+
+        entry->SetFlags(flags);
 
         if (Allocate)
-        {
-            en->SetData(AllocateDataEntry(id));
-        }
+            entry->SetData(AllocateDataEntry(id));
 
-        InsertMiscEntry(en);
+        InsertMiscEntry(entry);
 
-        return en;
+        return entry;
     }
 } // namespace CrpLib
