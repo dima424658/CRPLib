@@ -8,7 +8,7 @@ namespace CrpLib
     class ICrpEntry
     {
     public:
-        virtual ~ICrpEntry() = 0;
+        virtual ~ICrpEntry() {};
 
         virtual void Read(std::istream &is) = 0;
 
@@ -19,7 +19,7 @@ namespace CrpLib
     class ICrpData
     {
     public:
-        virtual ~ICrpData() = 0;
+        virtual ~ICrpData() {};
 
         virtual void Read(std::istream &is, ICrpEntry *entry) = 0;
         virtual void Write(std::ostream &os) = 0;

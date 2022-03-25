@@ -23,8 +23,6 @@ namespace CrpLib
         std::vector<tLevelMask> m_pLevMasks;
 
     public:
-        virtual ~CBase() = default;
-        
         void Read(std::istream &is, ICrpEntry *entry) override;
         void Write(std::ostream &os) override;
 

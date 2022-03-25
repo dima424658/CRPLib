@@ -22,13 +22,11 @@ namespace CrpLib {
         tGlareInfo m_GlareInfo;
 
     public:
-        virtual ~CEffect() = default;
+        void Read(std::istream &is, ICrpEntry *entry) override;
+        void Write(std::ostream &os) override;
 
-        virtual void Read(std::istream &is, ICrpEntry *entry);
-        virtual void Write(std::ostream &os);
-
-        virtual int GetEntryLength();
-        virtual int GetEntryCount();
+        int GetEntryLength() override;
+        int GetEntryCount() override;
 
         // Accessors and modifiers
         int GetGlowColor();

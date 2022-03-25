@@ -17,7 +17,6 @@ namespace CrpLib
     public:
         CRawData() = default;
         CRawData(char *pData, int length);
-        virtual ~CRawData() = default;
         
         void Read(std::istream &is, ICrpEntry *entry) override;
         void Write(std::ostream &os) override;

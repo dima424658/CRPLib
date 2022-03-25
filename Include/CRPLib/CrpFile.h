@@ -24,8 +24,6 @@ namespace CrpLib
         void InsertMiscEntry(CEntry *newEn);
 
     public:
-        virtual ~CCrpFile() = default;
-
         void Read(std::istream &is);
         void Write(std::ostream &os);
 

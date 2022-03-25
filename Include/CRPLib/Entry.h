@@ -24,7 +24,6 @@ namespace CrpLib
     public:
         CEntry() = default;
         CEntry(eEntryID id, int index);
-        virtual ~CEntry() = default;
 
         void Read(std::istream &is) override;
 

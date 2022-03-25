@@ -30,8 +30,6 @@ namespace CrpLib
     public:
         CPart() = default;
 
-        virtual ~CPart() = default;
-
         void Read(std::istream &is, ICrpEntry *entry) override;
         void Write(std::ostream &os) override;
 
